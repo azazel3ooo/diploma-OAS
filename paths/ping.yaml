@@ -1,0 +1,17 @@
+get:
+  tags: [ tools ]
+  summary: Ping сервера
+  security:
+#   Определяем роли необходимые для конкретного метода (действуют по принципе ИЛИ с глобальными).
+#   Если нужно обнулить глобальные роли, то передаем пустой массив
+    - openId: []
+  description: Ping сервера
+  operationId: ping
+  responses:
+    200:
+      description: OK
+      content: {}
+    400:
+      $ref: ../components/responses/400BadRequest.yaml
+    500:
+      $ref: ../components/responses/500InternalServerError.yaml

@@ -1,0 +1,43 @@
+openapi: 3.0.3
+info:
+  title: Наименование API
+  version: 0.0.1
+  license: 
+    name: proprietary
+servers:
+  - url: 'https://{tenant}/api/v1'
+    variables:
+      tenant:
+        default: www
+        description: Your tenant id
+  - url: 'https://example.com/api/v1'
+security:
+  # глобальные роли, необходимые для использования методов (чтобы не дублировать в каждом методе)
+    - openId:
+        - owner
+        - admin
+        - service
+        - support
+tags:
+  - name: tools
+
+paths:
+  /ping:
+    $ref: ./paths/ping.yaml
+
+components:
+  securitySchemes:
+    openId:
+      type: openIdConnect
+      openIdConnectUrl: https://example.com/.well-known/openid-configuration
+    api_key:
+      type: apiKey
+      in: header
+      name: api_key
+    basic_auth:
+      type: http
+      scheme: basic
+
+  schemas: {}
+
+  parameters: {}

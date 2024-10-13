@@ -1,0 +1,351 @@
+openapi: 3.0.3
+info:
+  title: Шаблон про игры
+  version: 0.0.1
+  license: 
+    name: proprietary
+servers:
+  - url: 'https://{tenant}/api/v1'
+    variables:
+      tenant:
+        default: www
+        description: Your tenant id
+  - url: 'https://example.com/api/v1'
+security:
+    - api_key: []
+    - basic_auth: []
+tags:
+  - name: Game
+  - name: tools
+
+paths:
+  /games:
+    get:
+      # Фильтрация, сортировка - https://gitlab.rusklimat.ru/alafuzov_n/apidoc/-/wikis/REST-api#фильтрация      
+      parameters:
+        - $ref: ./components/parameters/PaginationPage.yaml
+        - $ref: ./components/parameters/PaginationPageSize.yaml
+        - name: :order[name]
+          in: query
+          description: Сортировка по имени
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+        
+        # Фильтрация, сортировка - https://gitlab.rusklimat.ru/alafuzov_n/apidoc/-/wikis/REST-api#фильтрация
+      tags: [ Game ]
+      summary: Получиение списка игр
+      description: Получиение списка игр
+      operationId: listGames
+      responses:
+        200:
+          description: OK
+          # headers:
+          #   X-Total-Count: { $ref: ./components/headers/XtotalCount.yaml }
+          #   X-Page: { $ref: ./components/headers/Xpage.yaml }
+          #   X-Per-Page: { $ref: ./components/headers/XperPage.yaml }
+          #   # Link:
+          #   #   description: The links
+          #   #   schema:
+          #   #     type: array
+          #   #     items:
+          #   #       - type: string
+          #   #         description: Link to next page
+          #   #         example: '<{baseUrl}/games?:page=6&:pageSize=25>; rel="next"'
+          #   #       - type: string
+          #   #         description: Link to previouse page
+          #   #         example: '<{baseUrl}/games?:page=5&:pageSize=25>; rel="prev"'
+          #   #       - type: string
+          #   #         description: Link to first page
+          #   #         example: '<{baseUrl}/games?:page=1&:pageSize=25>; rel="first"'
+          #   #       - type: string
+          #   #         description: Link to last page
+          #   #         example: '<{baseUrl}/games?:page=100&:pageSize=25>; rel="last"'
+          # content:
+          #   application/json:
+          #     schema:
+          #       type: array
+          #       items:
+          #         oneOf: 
+          #           - $ref: "#/components/schemas/Game"
+          content: 
+            application/json:
+              schema: 
+                allOf: 
+                  - $ref: ./components/schemas/CollectionsView.yaml
+                  - type: object
+                    properties: 
+                      member:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Game.ref"
+        400:
+          $ref: components/responses/400BadRequest.yaml
+        500:
+          $ref: components/responses/500InternalServerError.yaml
+    post:
+      tags: [ Game ]
+      summary: Создание игры
+      description: Создание игры
+      operationId: createGame
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Game"
+        required: true
+      responses:
+        201: # https://datatracker.ietf.org/doc/html/rfc7231#section-6.3.2
+          description: Created
+          content: {}
+          headers:
+            Location:
+              description: Ссылка на созданный ресурс
+              schema:
+                type: string
+                format: iri-reference
+                example: "{basePath}/games/1"
+        422:
+          $ref: components/responses/422UnprocessableEntity.yaml
+        400:
+          $ref: ./components/responses/400BadRequest.yaml
+        500:
+          $ref: ./components/responses/500InternalServerError.yaml
+  /games/{game}:
+    parameters:
+      - $ref: "#/components/parameters/game"
+    get: # Обязателен, т.к. отвечает за IRI
+      tags: [ Game ]
+      summary: Получние данных игры
+      description: Получние данных игры
+      operationId: getGame
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+          links:
+            GameItems:
+              # the target link operationId
+              operationId: listGameItems
+              parameters:
+                # get the `game` field from the request path parameter named `game`
+                Game: $request.path.game
+        400:
+          $ref: ./components/responses/400BadRequest.yaml
+        500:
+          $ref: ./components/responses/500InternalServerError.yaml
+    patch:
+      tags: [ Game ]
+      summary: Обновление игры
+      description: Обновление игры
+      operationId: updateGame
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Game"
+        required: true
+      responses:
+        # Применяется или 204 или 200, в зависимости от того совпадает ли ответ с тем что передал клиент.
+        # Если совпадает, то достаточно выдать 204, если обработка асинхронная - 202 Accepted
+        # 200:
+        #   description: OK
+        #   content: 
+        #     application/json:
+        #       schema:
+        #         $ref: "#/components/schemas/Game"
+        204:
+          description: No ontent
+          content: {}
+          headers:
+            Location:
+              description: Ссылка на обновлённый список
+              schema:
+                type: string
+                format: iri-reference
+                example: "{basePath}/games/123"
+        400:
+          $ref: ./components/responses/400BadRequest.yaml
+        422:
+          $ref: ./components/responses/422UnprocessableEntity.yaml
+        500:
+          $ref: ./components/responses/500InternalServerError.yaml
+    delete:
+      tags: [ Game ]
+      summary: Удаление игры
+      description: Удаление игры
+      operationId: deleteGame
+      responses:
+        204:
+          description: No Content
+          content: {}
+        400:
+          $ref: ./components/responses/400BadRequest.yaml
+        404:
+          $ref: ./components/responses/404NotFound.yaml
+        500:
+          $ref: ./components/responses/500InternalServerError.yaml
+  /games/{game}/items:
+    parameters:
+      - $ref: "#/components/parameters/game"
+    get:
+      tags: [ Game ]
+      summary: Получение списка объектов в игре
+      description: Получение списка объектов в игре
+      operationId: listGameItems
+      responses:
+        200: # Возвращаем просто всю коллекцию без пагинации
+          description: OK
+          headers:
+            X-Total-Count: {$ref: "./components/headers/XtotalCount.yaml"}
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GameItem'
+        400:
+          $ref: ./components/responses/400BadRequest.yaml
+        500:
+          $ref: ./components/responses/500InternalServerError.yaml
+    post:
+      tags: [ Game ]
+      summary: Добавляет объект в игру
+      description: Добавляет объект в игру
+      operationId: addItemToGame
+      requestBody:
+        description: ChangeRequest structure
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameItem"
+        required: true
+      responses:
+        201: # https://datatracker.ietf.org/doc/html/rfc7231#section-6.3.2
+          description: Created
+          content: {}
+          headers:
+            Location:
+              description: Ссылка на созданный ресурс
+              schema:
+                type: string
+                format: iri-reference
+                example: /games/{id}/items/5
+        400:
+          $ref: ./components/responses/400BadRequest.yaml
+        422:
+          $ref: ./components/responses/422UnprocessableEntity.yaml
+        500:
+          $ref: ./components/responses/500InternalServerError.yaml
+  /games/{game}/items/{gameItem}:
+    parameters:
+      - $ref: "#/components/parameters/game"
+      - $ref: "#/components/parameters/gameItem"
+    delete:
+      tags: [ Game ]
+      summary: Удаление объект из списка
+      description: Удаляет объект из игры
+      operationId: deleteItemFromGame
+      responses:
+        204:
+          description: No Content
+          content: {}
+        400:
+          $ref: ./components/responses/400BadRequest.yaml
+        404:
+          $ref: ./components/responses/404NotFound.yaml
+        500:
+          $ref: ./components/responses/500InternalServerError.yaml
+  
+  /ping:
+    $ref: ./paths/ping.yaml
+  
+components:
+  securitySchemes:
+    main_auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: 'http://example.com/api/oauth/dialog'
+          scopes:
+            'read:users': read users info
+            'write:users': modify or remove users
+    api_key:
+      type: apiKey
+      in: header
+      name: api_key
+    basic_auth:
+      type: http
+      scheme: basic
+
+  schemas:
+    Game:
+      description: |
+        Игра
+      type: object
+      required: [ name ]
+      properties:
+        '@id':
+          type: string
+          format: iri-reference
+          readOnly: true
+          example: "{baseUrl}/games/0"
+        '@type':
+          type: string
+          format: iri-reference
+          readOnly: true
+          enum: ["Game"]
+        name:
+          description: Наименование игры
+          type: string
+          example: Игра 1
+        totalCount:
+          description: Количество объектов в игре
+          type: integer
+          example: 9000
+          readOnly: false
+    Game.ref:
+      description: |
+        Игра (ссылка)
+      type: object
+      required: [ name ]
+      properties:
+        '@id':
+          $ref: "#/components/schemas/Game/properties/@id"
+        name:
+          $ref: "#/components/schemas/Game/properties/name"
+    GameItem:
+      description: |
+        Элемент игры
+      type: object
+      properties:
+        '@id':
+          type: string
+          format: iri-reference
+          readOnly: true
+          example: "/games/{game}/items/0"
+        'link':
+          description: Ресурс
+          type: string
+          format: iri-reference
+          example: "{extService}/items/0"
+  
+  parameters:
+    game:
+      name: game
+      in: path
+      description: ID игры
+      required: true
+      schema:
+        type: integer
+    gameItem:
+      name: gameItem
+      in: path
+      description: ID объекта игры
+      required: true
+      schema:
+        type: integer

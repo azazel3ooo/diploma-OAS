@@ -1,0 +1,35 @@
+# See https://redocly.com/docs/cli/configuration/
+
+apis:
+  # Update the apiName with your actual API name, and the version with your actual API version.
+  example@v1:
+    # Update the path to your OpenAPI root file
+    root: ./openapi.yaml
+
+extends:
+  - recommended
+
+rules:
+  info-license-url:
+    severity: off
+  tag-description:
+    severity: off
+  operation-4xx-problem-details-rfc7807:
+    severity: warn
+      
+  # A sample custom rule. Read more about rules: https://redocly.com/docs/cli/rules/
+  # assert/operation-description:
+  #   subject: 
+  #     type: Operation
+  #     property: description
+  #   assertions:
+  #     defined: true
+  #     minLength: 30
+
+theme:
+  openapi:
+    generateCodeSamples:
+      languages:
+        - lang: curl
+        - lang: Node.js
+        # - lang: Python
